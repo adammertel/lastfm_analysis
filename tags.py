@@ -7,13 +7,10 @@ import json
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
 country = 'Slovakia'
 
-restricted_tags = [
-    'seen live', 'favourite bands', 'seen live more than once', 'seen-live'
-]
-
 all_tags = {}
-no_artists = 200
+no_artists = 100
 
+restricted_tags = json.load(open('restricted_tags.json'))
 artists_tags = json.load(open('tags.json'))
 
 artists_r = requests.get(
@@ -28,7 +25,6 @@ for ai, artist in enumerate(artists):
     artist_tags = {}
     if (artist['name'] in artists_tags):
         artist_tags = artists_tags[artist['name']]
-        print('artist ' + artist['name'] + ' loaded from stored json')
 
     else:
         r_tags = requests.get(
@@ -38,21 +34,23 @@ for ai, artist in enumerate(artists):
         if 'toptags' in r_tags.json():
             tags_list = r_tags.json()['toptags']['tag']
 
-            sum_count = sum(i['count'] for i in tags_list)
+            allowed_tags = [
+                d for d in tags_list
+                if d['name'].lower() not in restricted_tags
+            ]
+            sum_count = sum(i['count'] for i in allowed_tags)
 
-            for tag in tags_list:
+            for tag in allowed_tags:
                 tag_name = tag['name'].lower()
-                if tag_name not in restricted_tags:
-                    artist_tags[tag_name] = float(
-                        tag['count']) / float(sum_count)
+                artist_tags[tag_name] = float(tag['count']) / float(sum_count)
         else:
             no_artists = no_artists - 1
 
-    for tag in tags_list:
+    for tag_name in artist_tags:
         if tag_name not in all_tags:
-            all_tags[tag_name] = float(tag['count']) / float(sum_count)
+            all_tags[tag_name] = artist_tags[tag_name]
         else:
-            all_tags[tag_name] += float(tag['count']) / float(sum_count)
+            all_tags[tag_name] += artist_tags[tag_name]
 
     artists_tags[artist['name']] = artist_tags
 
