@@ -5,85 +5,138 @@ from matplotlib import cm
 import json
 
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
-country = 'Slovakia'
+limit_artists = 10
+tag_threshold = 0.001
 
-all_tags = {}
-no_artists = 100
+
+def do_as_request(url_rest):
+    return do_request('http://ws.audioscrobbler.com/2.0/?method=' + url_rest +
+                      '&api_key=' + lfm_api + '&format=json')
+
+
+def do_request(url):
+    return requests.get(url).json()
+
+
+def append_object_to_stored_json(path, key, value):
+    loaded_json = json.load(open(path))
+    loaded_json[key] = value
+    store_json(path, loaded_json)
+
+
+def extend_stored_json(path, extension):
+    loaded_json = json.load(open(path))
+    extended_json = loaded_json.update(extension)
+    store_json(path, extended_json)
+
+
+def store_json(path, new_json):
+    with open(path, 'w') as file:
+        json.dump(new_json, file)
+
 
 restricted_tags = json.load(open('restricted_tags.json'))
 artists_tags = json.load(open('tags.json'))
+countries_tags = {}
 
-artists_r = requests.get(
-    'http://ws.audioscrobbler.com/2.0/?method=geo.gettopartists&country=' +
-    country + '&api_key=' + lfm_api + '&format=json&limit=' + str(no_artists))
-artists = artists_r.json()['topartists']['artist']
+countries = json.load(open('countries.geojson'))
 
-for ai, artist in enumerate(artists):
-    if ai % 10 == 0:
-        print('progress: ' + str(float(ai) / float(no_artists) * 100) + '%')
+processed_no = 0
+for country_obj in countries['features']:
+    country = country_obj['properties']['admin']
+    print ''
+    print 'processing country: ' + country + ', ' + str(
+        processed_no) + ' / ' + str(len(countries['features']))
 
-    artist_tags = {}
-    if (artist['name'] in artists_tags):
-        artist_tags = artists_tags[artist['name']]
+    country_tags = {}
+    found_artists = limit_artists
+    processed_no = processed_no + 1
 
-    else:
-        r_tags = requests.get(
-            'http://ws.audioscrobbler.com/2.0/?method=artist.gettoptags&artist='
-            + artist['name'] + '&api_key=' + lfm_api + '&format=json')
+    try:
+        artists = do_as_request('geo.gettopartists&country=' + country +
+                                '&limit=' + str(limit_artists))['topartists'][
+                                    'artist']
 
-        if 'toptags' in r_tags.json():
-            tags_list = r_tags.json()['toptags']['tag']
+        for ai, artist in enumerate(artists):
+            if ai % 10 == 0:
+                print('progress: ' +
+                      str(float(ai) / float(limit_artists) * 100) + '%')
 
-            allowed_tags = [
-                d for d in tags_list
-                if d['name'].lower() not in restricted_tags
-            ]
-            sum_count = sum(i['count'] for i in allowed_tags)
+            artist_tags = {}
+            if (artist['name'] in artists_tags):
+                artist_tags = artists_tags[artist['name']]
 
-            for tag in allowed_tags:
-                tag_name = tag['name'].lower()
-                artist_tags[tag_name] = float(tag['count']) / float(sum_count)
-        else:
-            no_artists = no_artists - 1
+            else:
+                artist_tags_raw = do_as_request(
+                    'artist.gettoptags&artist=' + artist['name'])
 
-    for tag_name in artist_tags:
-        if tag_name not in all_tags:
-            all_tags[tag_name] = artist_tags[tag_name]
-        else:
-            all_tags[tag_name] += artist_tags[tag_name]
+                if 'toptags' in artist_tags_raw:
+                    tags_list = artist_tags_raw['toptags']['tag']
 
-    artists_tags[artist['name']] = artist_tags
+                    allowed_tags = [
+                        d for d in tags_list
+                        if d['name'].lower() not in restricted_tags
+                    ]
+                    sum_count = sum(i['count'] for i in allowed_tags)
 
-with open('tags.json', 'w') as file_tags:
-    json.dump(artists_tags, file_tags)
+                    for tag in allowed_tags:
+                        tag_name = tag['name'].lower()
+                        artist_tags[tag_name] = float(
+                            tag['count']) / float(sum_count)
 
-# normalise
-for tag in all_tags:
-    all_tags[tag] = all_tags[tag] / no_artists
+                    append_object_to_stored_json('tags.json', artist['name'],
+                                                 artist_tags)
 
-others_sum = 0
-will_remove_tags = []
-for tag in all_tags:
-    if all_tags[tag] < 0.01:
-        others_sum += all_tags[tag]
-        will_remove_tags.append(tag)
+                else:
+                    found_artists = found_artists - 1
 
-for tag in will_remove_tags:
-    del all_tags[tag]
+            for tag_name in artist_tags:
+                if tag_name not in country_tags:
+                    country_tags[tag_name] = artist_tags[tag_name]
+                else:
+                    country_tags[tag_name] += artist_tags[tag_name]
 
-all_tags['other - less than 1%'] = others_sum
+            artists_tags[artist['name']] = artist_tags
 
-sorted_tags = []
-sorted_values = []
-for key, value in sorted(all_tags.iteritems(), key=lambda (k, v): (v, k)):
-    sorted_tags.append(key)
-    sorted_values.append(value)
+        # remove small
+        for tag in country_tags:
+            if country_tags[tag] < tag_threshold:
+                del country_tags[tag]
 
-fig1, ax1 = plt.subplots()
-ax1.pie(
-    sorted_values,
-    labels=sorted_tags,
-    autopct='%1.1f%%',
-    colors=cm.Set1(np.linspace(0, 1, len(sorted_tags))))
-ax1.axis('equal')
-plt.show()
+        # normalise
+        for tag in country_tags:
+            country_tags[tag] = country_tags[tag] / found_artists
+
+        countries_tags[country] = country_tags
+
+    except:
+        countries_tags[country] = {}
+
+store_json('countries_tags.json', countries_tags)
+
+# others_sum = 0
+# will_remove_tags = []
+# for tag in all_tags:
+#     if all_tags[tag] < 0.01:
+#         others_sum += all_tags[tag]
+#         will_remove_tags.append(tag)
+
+# for tag in will_remove_tags:
+#     del all_tags[tag]
+
+# all_tags['other - less than 1%'] = others_sum
+
+# sorted_tags = []
+# sorted_values = []
+# for key, value in sorted(all_tags.iteritems(), key=lambda (k, v): (v, k)):
+#     sorted_tags.append(key)
+#     sorted_values.append(value)
+
+# fig1, ax1 = plt.subplots()
+# ax1.pie(
+#     sorted_values,
+#     labels=sorted_tags,
+#     autopct='%1.1f%%',
+#     colors=cm.Set1(np.linspace(0, 1, len(sorted_tags))))
+# ax1.axis('equal')
+# plt.show()
