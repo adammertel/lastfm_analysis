@@ -42,15 +42,22 @@ def clean_json(path):
     store_json(path, {})
 
 
-clean_json('tags.json')
+# cleaning old data
+clean_json('artists_tags.json')
 clean_json('countries_tags.json')
 clean_json('countries_not_found.json')
 print('lists cleaned')
 
 countries_tags = {}
-restricted_tags = json.load(open('restricted_tags.json'))
-artists_tags = json.load(open('tags.json'))
+artists_tags = json.load(open('artists_tags.json'))
 countries = json.load(open('countries.geojson'))
+
+# adding country names to the list of restricted tags
+restricted_tags = json.load(open('restricted_tags.json'))
+country_names = [
+    c['properties']['admin'].lower() for c in countries['features']
+]
+restricted_tags += country_names
 
 countries_not_found = []
 
@@ -100,8 +107,8 @@ for country_obj in countries['features']:
                         artist_tags[tag_name] = float(
                             tag['count']) / float(sum_count)
 
-                    append_object_to_stored_json('tags.json', artist['name'],
-                                                 artist_tags)
+                    append_object_to_stored_json('artists_tags.json',
+                                                 artist['name'], artist_tags)
                     print('artist ' + artist['name'] + ' added to stored list')
 
                 else:
@@ -136,7 +143,7 @@ for country_obj in countries['features']:
 
     if processed_no == 10:
 
-        #parse countries_tags
+        # parse countries_tags
         parsed_countries_tags = {}
         tags_keys = {}
         next_id = 1
@@ -170,6 +177,7 @@ for country_obj in countries['features']:
                 parsed_countries_tags[country][tag_id] = countries_tags[
                     country][tag]
 
+        # storing output
         store_json('countries_tags.json', parsed_countries_tags, True)
         store_json('tags_list.json', tags_keys, True)
         store_json('countries_not_found.json', countries_not_found, True)
