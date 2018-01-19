@@ -5,8 +5,7 @@ from matplotlib import cm
 import json
 
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
-limit_artists = 10
-tag_threshold = 0.001
+limit_artists = 100
 tag_threshold = 0.001
 
 
@@ -145,49 +144,48 @@ for country_obj in countries['features']:
         countries_not_found.append(country)
         countries_tags[country] = {}
 
-    if processed_no == 10:
+    #if processed_no == 10:
+    #break
 
-        # parse countries_tags
-        parsed_countries_tags = {}
-        tags_keys = {}
-        next_id = 1
+# parse countries_tags
+parsed_countries_tags = {}
+tags_keys = {}
+next_id = 1
 
-        def find_tag_in_tags_keys(tag):
-            found = False
-            for key in tags_keys:
-                if tags_keys[key]['name'] == tag:
-                    found = key
-            return found
 
-        for country in countries_tags:
-            for tag in countries_tags[country]:
+def find_tag_in_tags_keys(tag):
+    found = False
+    for key in tags_keys:
+        if tags_keys[key]['name'] == tag:
+            found = key
+    return found
 
-                parsed_tag_id = find_tag_in_tags_keys(tag)
-                if parsed_tag_id:
-                    tags_keys[parsed_tag_id]['val'] += float(
-                        countries_tags[country][tag])
 
-                else:
-                    tags_keys[next_id] = {
-                        "name": tag,
-                        "val": float(countries_tags[country][tag])
-                    }
-                    next_id = next_id + 1
+for country in countries_tags:
+    for tag in countries_tags[country]:
 
-        for country in countries_tags:
-            parsed_countries_tags[country] = {}
-            for tag in countries_tags[country]:
-                tag_id = find_tag_in_tags_keys(tag)
-                parsed_countries_tags[country][tag_id] = countries_tags[
-                    country][tag]
+        parsed_tag_id = find_tag_in_tags_keys(tag)
+        if parsed_tag_id:
+            tags_keys[parsed_tag_id]['val'] += float(
+                countries_tags[country][tag])
 
-        # storing output
-        store_json('countries_tags.json', parsed_countries_tags, True)
-        store_json('tags_list.json', tags_keys, True)
-        store_json('countries_not_found.json', countries_not_found, True)
-        break
+        else:
+            tags_keys[next_id] = {
+                "name": tag,
+                "val": float(countries_tags[country][tag])
+            }
+            next_id = next_id + 1
 
-#store_json('countries_tags.json', countries_tags)
+for country in countries_tags:
+    parsed_countries_tags[country] = {}
+    for tag in countries_tags[country]:
+        tag_id = find_tag_in_tags_keys(tag)
+        parsed_countries_tags[country][tag_id] = countries_tags[country][tag]
+
+# storing output
+store_json('countries_tags.json', parsed_countries_tags, True)
+store_json('tags_list.json', tags_keys, True)
+store_json('countries_not_found.json', countries_not_found, True)
 
 # others_sum = 0
 # will_remove_tags = []
