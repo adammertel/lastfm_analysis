@@ -33,9 +33,16 @@ def extend_stored_json(path, extension):
 def store_json(path, new_json):
     with open(path, 'w') as file:
         json.dump(new_json, file)
+        print 'file ' + path + ' saved.'
+
+
+def clean_json(path):
+    store_json(path, {})
 
 
 restricted_tags = json.load(open('restricted_tags.json'))
+clean_json('tags.json')
+clean_json('countries_tags.json')
 artists_tags = json.load(open('tags.json'))
 countries_tags = {}
 
@@ -52,10 +59,12 @@ for country_obj in countries['features']:
     found_artists = limit_artists
     processed_no = processed_no + 1
 
+    artists = False
+
     try:
-        artists = do_as_request('geo.gettopartists&country=' + country +
-                                '&limit=' + str(limit_artists))['topartists'][
-                                    'artist']
+        artists_q = do_as_request('geo.gettopartists&country=' + country +
+                                  '&limit=' + str(limit_artists))
+        artists = artists_q['topartists']['artist']
 
         for ai, artist in enumerate(artists):
             if ai % 10 == 0:
@@ -98,21 +107,66 @@ for country_obj in countries['features']:
 
             artists_tags[artist['name']] = artist_tags
 
-        # remove small
+        # normalise, round and remove small
+        country_tags_normal = {}
         for tag in country_tags:
-            if country_tags[tag] < tag_threshold:
-                del country_tags[tag]
+            country_tags_normal[tag] = float("{0:.5f}".format(
+                country_tags[tag] / found_artists))
 
-        # normalise
-        for tag in country_tags:
-            country_tags[tag] = country_tags[tag] / found_artists
+            # if small
+            if country_tags_normal[tag] < tag_threshold:
+                try:
+                    del country_tags_normal[tag]
+                except:
+                    print 'problem removing tag ' + tag
 
-        countries_tags[country] = country_tags
+        countries_tags[country] = country_tags_normal
 
     except:
+        print(artists)
         countries_tags[country] = {}
 
-store_json('countries_tags.json', countries_tags)
+    if processed_no == 10:
+
+        #parse countries_tags
+        parsed_countries_tags = {}
+        tags_keys = {}
+        next_id = 1
+
+        def find_tag_in_tags_keys(tag):
+            found = False
+            for key in tags_keys:
+                if tags_keys[key]['name'] == tag:
+                    found = key
+            return found
+
+        for country in countries_tags:
+            for tag in countries_tags[country]:
+
+                parsed_tag_id = find_tag_in_tags_keys(tag)
+                if parsed_tag_id:
+                    tags_keys[parsed_tag_id]['val'] += float(
+                        countries_tags[country][tag])
+
+                else:
+                    tags_keys[next_id] = {
+                        "name": tag,
+                        "val": float(countries_tags[country][tag])
+                    }
+                    next_id = next_id + 1
+
+        for country in countries_tags:
+            parsed_countries_tags[country] = {}
+            for tag in countries_tags[country]:
+                tag_id = find_tag_in_tags_keys(tag)
+                parsed_countries_tags[country][tag_id] = countries_tags[
+                    country][tag]
+
+        store_json('countries_tags.json', parsed_countries_tags)
+        store_json('tags_list.json', tags_keys)
+        break
+
+#store_json('countries_tags.json', countries_tags)
 
 # others_sum = 0
 # will_remove_tags = []
