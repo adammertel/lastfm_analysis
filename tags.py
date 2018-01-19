@@ -42,6 +42,10 @@ def clean_json(path):
     store_json(path, {})
 
 
+def clean_tag_name(tag):
+    return tag.lower().replace('-', ' ').replace('\'', '')
+
+
 # cleaning old data
 clean_json('artists_tags.json')
 clean_json('countries_tags.json')
@@ -98,12 +102,12 @@ for country_obj in countries['features']:
 
                     allowed_tags = [
                         d for d in tags_list
-                        if d['name'].lower() not in restricted_tags
+                        if clean_tag_name(d['name']) not in restricted_tags
                     ]
                     sum_count = sum(i['count'] for i in allowed_tags)
 
                     for tag in allowed_tags:
-                        tag_name = tag['name'].lower()
+                        tag_name = clean_tag_name(tag['name'])
                         artist_tags[tag_name] = float(
                             tag['count']) / float(sum_count)
 
