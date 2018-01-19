@@ -5,7 +5,7 @@ from matplotlib import cm
 import json
 
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
-limit_artists = 100
+limit_artists = 1
 tag_threshold = 0.001
 
 
@@ -53,7 +53,7 @@ print('lists cleaned')
 
 countries_tags = {}
 artists_tags = json.load(open('artists_tags.json'))
-countries = json.load(open('./..countries.geojson'))
+countries = json.load(open('./../countries.geojson'))
 
 # adding country names to the list of restricted tags
 restricted_tags = json.load(open('restricted_tags.json'))
