@@ -7,6 +7,7 @@ import json
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
 limit_artists = 10
 tag_threshold = 0.001
+tag_threshold = 0.001
 
 
 def do_as_request(url_rest):
@@ -30,34 +31,40 @@ def extend_stored_json(path, extension):
     store_json(path, extended_json)
 
 
-def store_json(path, new_json):
+def store_json(path, new_json, inform=False):
     with open(path, 'w') as file:
         json.dump(new_json, file)
-        print 'file ' + path + ' saved.'
+        if inform:
+            print 'file ' + path + ' saved.'
 
 
 def clean_json(path):
     store_json(path, {})
 
 
-restricted_tags = json.load(open('restricted_tags.json'))
 clean_json('tags.json')
 clean_json('countries_tags.json')
-artists_tags = json.load(open('tags.json'))
-countries_tags = {}
+clean_json('countries_not_found.json')
+print('lists cleaned')
 
+countries_tags = {}
+restricted_tags = json.load(open('restricted_tags.json'))
+artists_tags = json.load(open('tags.json'))
 countries = json.load(open('countries.geojson'))
+
+countries_not_found = []
 
 processed_no = 0
 for country_obj in countries['features']:
+    processed_no = processed_no + 1
     country = country_obj['properties']['admin']
+
     print ''
     print 'processing country: ' + country + ', ' + str(
         processed_no) + ' / ' + str(len(countries['features']))
 
     country_tags = {}
     found_artists = limit_artists
-    processed_no = processed_no + 1
 
     artists = False
 
@@ -95,6 +102,7 @@ for country_obj in countries['features']:
 
                     append_object_to_stored_json('tags.json', artist['name'],
                                                  artist_tags)
+                    print('artist ' + artist['name'] + ' added to stored list')
 
                 else:
                     found_artists = found_artists - 1
@@ -123,7 +131,7 @@ for country_obj in countries['features']:
         countries_tags[country] = country_tags_normal
 
     except:
-        print(artists)
+        countries_not_found.append(country)
         countries_tags[country] = {}
 
     if processed_no == 10:
@@ -162,8 +170,9 @@ for country_obj in countries['features']:
                 parsed_countries_tags[country][tag_id] = countries_tags[
                     country][tag]
 
-        store_json('countries_tags.json', parsed_countries_tags)
-        store_json('tags_list.json', tags_keys)
+        store_json('countries_tags.json', parsed_countries_tags, True)
+        store_json('tags_list.json', tags_keys, True)
+        store_json('countries_not_found.json', countries_not_found, True)
         break
 
 #store_json('countries_tags.json', countries_tags)
