@@ -5,7 +5,7 @@ from matplotlib import cm
 import json
 
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
-limit_artists = 1
+limit_artists = 500
 tag_threshold = 0.001
 
 
@@ -88,7 +88,9 @@ for country_obj in countries['features']:
                 print('progress: ' +
                       str(float(ai) / float(limit_artists) * 100) + '%')
 
+            artist_weight = 1 - ai / limit_artists
             artist_tags = {}
+
             if (artist['name'] in artists_tags):
                 artist_tags = artists_tags[artist['name']]
 
@@ -119,9 +121,11 @@ for country_obj in countries['features']:
 
             for tag_name in artist_tags:
                 if tag_name not in country_tags:
-                    country_tags[tag_name] = artist_tags[tag_name]
+                    country_tags[tag_name] = artist_tags[
+                        tag_name] * artist_weight
                 else:
-                    country_tags[tag_name] += artist_tags[tag_name]
+                    country_tags[tag_name] += artist_tags[
+                        tag_name] * artist_weight
 
             artists_tags[artist['name']] = artist_tags
 
@@ -175,6 +179,9 @@ for country in countries_tags:
                 "val": float(countries_tags[country][tag])
             }
             next_id = next_id + 1
+
+for tag in tags_keys:
+    tag['val'] = float("{0:.5f}".format(tag['val']))
 
 for country in countries_tags:
     parsed_countries_tags[country] = {}
