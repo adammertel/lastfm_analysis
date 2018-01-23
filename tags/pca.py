@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from numpy import genfromtxt
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
 #data = genfromtxt('tags_table.csv', delimiter='\t', skip_header=3)
 data = pd.read_csv('tags_table.csv', sep="\t", skiprows=1, index_col=0)
@@ -11,8 +12,13 @@ data = data.drop(data.index[0])
 #data = np.array(tags_data)
 #data = np.delete(data, [0, 0], axis=1)
 
-pca = PCA(n_components=6, svd_solver="full")
+pca = PCA(n_components=2, svd_solver="full")
 pca2 = pca.fit(data)
+
+np.savetxt("outputs/pca_t.csv", pca2.transform(data), delimiter="\t")
+kmeans = KMeans(n_clusters=4, random_state=0).fit(pca2.transform(data))
+kgroups = kmeans.labels_
+
 print(pca2.explained_variance_ratio_)
 print(pca2.singular_values_)
 comps = pca2.components_
@@ -35,5 +41,7 @@ for ci, comp in enumerate(comps):
 
 for ci, comp in enumerate(comps):
     data['PC' + str(ci + 1) + '_sum'] = comps_vals[ci]
+
+data['k_means_groups'] = np.append(kgroups, [0] * len(comps))
 
 data.to_csv("outputs/pca.csv", sep="\t")
