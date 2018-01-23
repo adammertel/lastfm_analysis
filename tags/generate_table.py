@@ -7,6 +7,8 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 countries_tags = json.load(io.open('countries_tags.json', encoding='utf-8'))
+countries_not_found = json.load(
+    io.open('countries_not_found.json', encoding='utf-8'))
 tags_dict = json.load(io.open('tags_list.json', encoding='utf-8'))
 
 # tags list
@@ -34,22 +36,23 @@ for tag in s_tags_list:
 countries_rows = []
 # countries
 for country in countries_tags:
-    country_row = [country] + [0] * len(header2)
+    if country not in countries_not_found:
+        country_row = [country] + [0] * (len(header2) - 1)
 
-    for tag in countries_tags[country]:
-        val = countries_tags[country][tag]
+        for tag in countries_tags[country]:
+            val = countries_tags[country][tag]
 
-        for si, s_tag in enumerate(s_tags_list):
-            if s_tag['id'] == tag:
-                country_row[si + 1] = val
-                break
+            for si, s_tag in enumerate(s_tags_list):
+                if s_tag['id'] == tag:
+                    country_row[si + 1] = val
+                    break
 
-    countries_rows.append(country_row)
+        countries_rows.append(country_row)
 
 with io.open('tags_table.csv', 'wb') as f:
     writer = csv.writer(f, delimiter='\t', lineterminator='\n')
 
-    writer.writerow(header1 + ['\n'])
+    writer.writerow(header1)
     writer.writerow(header2)
     writer.writerow(header3)
 
