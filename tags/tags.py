@@ -68,6 +68,7 @@ def parse_and_store():
         print('parsing1: ' +
               str(_round(float(parse1) / float(countries_no) * 100, 2)) + '%')
 
+        # creating list of tags
         for tag in countries_tags[country]:
 
             parsed_tag_id = find_tag_in_tags_keys(tag)
@@ -82,6 +83,16 @@ def parse_and_store():
                 }
                 next_id = next_id + 1
 
+    # normalise
+    normalised_relevant_tags = {}
+    for key in tags_keys:
+        tags_keys[key]['val'] = _round(
+            float(tags_keys[key]['val']) / float(len(countries_tags.keys())))
+        if tags_keys[key]['val'] > tag_threshold:
+            normalised_relevant_tags[key] = tags_keys[key]
+
+    tags_keys = normalised_relevant_tags
+
     parse2 = 0
     for country in countries_tags:
         parse2 += 1
@@ -91,12 +102,9 @@ def parse_and_store():
         parsed_countries_tags[country] = {}
         for tag in countries_tags[country]:
             tag_id = find_tag_in_tags_keys(tag)
-            parsed_countries_tags[country][tag_id] = float(
-                countries_tags[country][tag])
-
-    for key in tags_keys:
-        tags_keys[key]['val'] = _round(
-            float(tags_keys[key]['val']) / float(len(countries_tags.keys())))
+            if tag_id:
+                parsed_countries_tags[country][tag_id] = float(
+                    countries_tags[country][tag])
 
     print(sum(tags_keys[i]['val'] for i in tags_keys))
 
