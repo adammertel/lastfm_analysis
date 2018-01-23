@@ -105,10 +105,15 @@
 
     var styleCountry = function (feature) {
         var countryName = feature.properties.admin;
+        console.log(countryName)
+        var color = 'grey'
+        if (countries[countryName] && countries[countryName][tagId]) {
+            color = getColor(countries[countryName][tagId])
+        }
 
         return {
             weight: 1,
-            fillColor: getColor(countries[countryName][tagId]) || 'black',
+            fillColor: color,
             color: 'white',
             fillOpacity: 0.7
         }
@@ -125,14 +130,16 @@
         geo = L.geoJSON(countriesGeo, {
             style: styleCountry,
             onEachFeature: function (feature, layer) {
-                var active = countries[feature.properties.admin][tagId];
-                var relative = active / max;
-                layer.bindPopup(
-                    '<h4>' + feature.properties.admin + '</h4> ' +
-                    '<p style="margin: 0px"><b>value: </b>' + active + '</p>' +
-                    '<p style="margin: 0px"><b>max: </b>' + max + '</p>' +
-                    '<p style="margin: 0px"><b>relative percentile: </b>' + Math.round(relative * 100) + '%</p>'
-                );
+                if (countries[feature.properties.admin]) {
+                    var active = countries[feature.properties.admin][tagId];
+                    var relative = active / max;
+                    layer.bindPopup(
+                        '<h4>' + feature.properties.admin + '</h4> ' +
+                        '<p style="margin: 0px"><b>value: </b>' + active + '</p>' +
+                        '<p style="margin: 0px"><b>max: </b>' + max + '</p>' +
+                        '<p style="margin: 0px"><b>relative: </b>' + Math.round(relative * 100) + '%</p>'
+                    );
+                }
             }
         }).addTo(map)
 
