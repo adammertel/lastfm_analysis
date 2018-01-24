@@ -122,7 +122,7 @@ print('lists cleaned')
 
 countries_tags = {}
 artists_tags = json.load(open('artists_tags.json'))
-countries = json.load(open('./../countries.geojson'))
+countries = json.load(open('./../data/countries.geojson'))
 
 # adding country names to the list of restricted tags
 restricted_tags = json.load(open('restricted_tags.json'))
