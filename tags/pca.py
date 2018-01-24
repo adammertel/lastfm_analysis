@@ -17,27 +17,30 @@ data = data.drop(data.index[0])
 #data = np.array(tags_data)
 #data = np.delete(data, [0, 0], axis=1)
 
-pca = PCA(n_components=2, svd_solver="full")
-pca2 = pca.fit(data)
+# normalise
+data = (data - data.mean()) / data.std()
+#data = (data-df.min())/(data.max()-data.min())
+data.to_csv("outputs/pca_n.csv", sep="\t")
+
+pca = PCA(n_components=2, svd_solver="full").fit(data)
+data_t = pca.transform(data)
 
 # k means clustering
-np.savetxt("outputs/pca_t.csv", pca2.transform(data), delimiter="\t")
-clusters_kmeans = KMeans(
-    n_clusters=4, random_state=0).fit(pca2.transform(data))
+np.savetxt("outputs/pca_t.csv", data_t, delimiter="\t")
+
+clusters_kmeans = KMeans(n_clusters=4, random_state=0).fit(data_t)
 
 # mean shift clustering
-bandwidth = estimate_bandwidth(
-    pca2.transform(data), quantile=0.1, n_samples=200)
-clusters_ms = MeanShift(
-    bandwidth=bandwidth, bin_seeding=True).fit(pca2.transform(data))
+bandwidth = estimate_bandwidth(data_t, quantile=0.12, n_samples=200)
+clusters_ms = MeanShift(bandwidth=bandwidth, bin_seeding=True).fit(data_t)
 
 groups_kmean = clusters_kmeans.labels_
 groups_ms = clusters_ms.labels_
 
 print(clusters_ms.labels_)
-print(pca2.explained_variance_ratio_)
-print(pca2.singular_values_)
-comps = pca2.components_
+print(pca.explained_variance_ratio_)
+print(pca.singular_values_)
+comps = pca.components_
 
 for ci, comp in enumerate(comps):
     PC_row = pd.DataFrame([comp], columns=list(data.columns.values))
@@ -76,9 +79,9 @@ colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
 for k, col in zip(range(n_clusters_), colors):
     my_members = labels == k
     cluster_center = cluster_centers[k]
-    plt.plot(
-        pca2.transform(data)[my_members, 0],
-        pca2.transform(data)[my_members, 1], col + '.')
+    print(data_t)
+
+    plt.plot(data_t[my_members, 0], data_t[my_members, 1], col + '.')
     plt.plot(
         cluster_center[0],
         cluster_center[1],
@@ -87,5 +90,4 @@ for k, col in zip(range(n_clusters_), colors):
         markeredgecolor='k',
         markersize=14)
 plt.title('Estimated number of clusters: %d' % n_clusters_)
-plt.show()
- '''
+plt.show() '''
