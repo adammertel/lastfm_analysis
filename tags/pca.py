@@ -3,9 +3,14 @@ import pandas as pd
 from numpy import genfromtxt
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from sklearn.cluster import MeanShift, estimate_bandwidth
+
+import matplotlib.pyplot as plt
+from itertools import cycle
 
 #data = genfromtxt('tags_table.csv', delimiter='\t', skip_header=3)
-data = pd.read_csv('tags_table.csv', sep="\t", skiprows=1, index_col=0)
+data = pd.read_csv(
+    './outputs/tags_table.csv', sep="\t", skiprows=1, index_col=0)
 #data = data.drop(data.columns[[0]], axis=1)
 data = data.drop(data.index[0])
 
@@ -15,10 +20,21 @@ data = data.drop(data.index[0])
 pca = PCA(n_components=2, svd_solver="full")
 pca2 = pca.fit(data)
 
+# k means clustering
 np.savetxt("outputs/pca_t.csv", pca2.transform(data), delimiter="\t")
-kmeans = KMeans(n_clusters=4, random_state=0).fit(pca2.transform(data))
-kgroups = kmeans.labels_
+clusters_kmeans = KMeans(
+    n_clusters=4, random_state=0).fit(pca2.transform(data))
 
+# mean shift clustering
+bandwidth = estimate_bandwidth(
+    pca2.transform(data), quantile=0.1, n_samples=200)
+clusters_ms = MeanShift(
+    bandwidth=bandwidth, bin_seeding=True).fit(pca2.transform(data))
+
+groups_kmean = clusters_kmeans.labels_
+groups_ms = clusters_ms.labels_
+
+print(clusters_ms.labels_)
 print(pca2.explained_variance_ratio_)
 print(pca2.singular_values_)
 comps = pca2.components_
@@ -42,6 +58,34 @@ for ci, comp in enumerate(comps):
 for ci, comp in enumerate(comps):
     data['PC' + str(ci + 1) + '_sum'] = comps_vals[ci]
 
-data['k_means_groups'] = np.append(kgroups, [0] * len(comps))
+data['clusters_kmeans'] = np.append(groups_kmean, [0] * len(comps))
+data['clusters_ms'] = np.append(groups_ms, [0] * len(comps))
 
 data.to_csv("outputs/pca.csv", sep="\t")
+
+# plotting mean shift
+''' labels = clusters_ms.labels_
+cluster_centers = clusters_ms.cluster_centers_
+labels_unique = np.unique(labels)
+n_clusters_ = len(labels_unique)
+
+plt.figure(1)
+plt.clf()
+
+colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
+for k, col in zip(range(n_clusters_), colors):
+    my_members = labels == k
+    cluster_center = cluster_centers[k]
+    plt.plot(
+        pca2.transform(data)[my_members, 0],
+        pca2.transform(data)[my_members, 1], col + '.')
+    plt.plot(
+        cluster_center[0],
+        cluster_center[1],
+        'o',
+        markerfacecolor=col,
+        markeredgecolor='k',
+        markersize=14)
+plt.title('Estimated number of clusters: %d' % n_clusters_)
+plt.show()
+ '''

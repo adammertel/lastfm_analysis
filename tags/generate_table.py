@@ -36,7 +36,8 @@ for tag in s_tags_list:
 countries_rows = []
 # countries
 for country in countries_tags:
-    if country not in countries_not_found:
+    if country not in countries_not_found and len(
+            countries_tags[country].keys()):
         country_row = [country] + [0] * (len(header2) - 1)
 
         for tag in countries_tags[country]:
@@ -49,7 +50,7 @@ for country in countries_tags:
 
         countries_rows.append(country_row)
 
-with io.open('tags_table.csv', 'wb') as f:
+with io.open('./outputs/tags_table.csv', 'wb') as f:
     writer = csv.writer(f, delimiter='\t', lineterminator='\n')
 
     writer.writerow(header1)
