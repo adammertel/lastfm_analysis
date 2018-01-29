@@ -13,12 +13,20 @@ round_decimals = 1000000
 values_to_store = ['name', 'country', 'playcount']
 
 stored_users = []
+processed_users = []
+
 with io.open('users.csv', 'rb') as f:
     reader = csv.reader(f, delimiter='\t', lineterminator='\n')
     for row in reader:
         stored_users.append(row[0])
 
+with io.open('processed.csv', 'rb') as f:
+    reader = csv.reader(f, delimiter='\t', lineterminator='\n')
+    for row in reader:
+        processed_users.append(row[0])
+
 print(len(stored_users))
+print(len(processed_users))
 
 
 def store_new_user(username, user_data):
@@ -70,13 +78,16 @@ def store_friends(usernames, lvl):
                             friend['playcount']
                         ])
                         stored += 1
+
+                    if name not in processed_users:
                         new_users.append(name)
 
                 total += len(friends)
                 new += stored
-                print('user: ' + username + ' , stored ' + str(stored) + '/' +
-                      str(len(friends)) + ', total: ' +
-                      str(len(stored_users)) + ' [success: ' + str(
+
+                print('user: ' + username + ' , lvl: ' + str(lvl) + ' stored '
+                      + str(stored) + '/' + str(len(friends)) + ', total: ' +
+                      str(len(stored_users)) + ' [success rate: ' + str(
                           (float(new) / float(total)) * 100) + '%]')
 
         except Exception as e:
@@ -85,11 +96,17 @@ def store_friends(usernames, lvl):
             print(e)
             print('!!')
 
+        if username not in processed_users:
+            processed_users.append(username)
+            with io.open('processed.csv', 'ab') as f:
+                writer = csv.writer(f, delimiter='\t', lineterminator='\n')
+                writer.writerow([username])
+
     return new_users
 
 
 # first iteratiron
-friends1 = store_friends(['cengizhaneren'], 1)
+friends1 = store_friends(['mIZZYchal'], 1)
 
 # second iteration
 friends2 = store_friends(friends1, 2)
