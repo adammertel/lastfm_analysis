@@ -10,14 +10,23 @@ lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
 limit_artists = 200
 tag_threshold = 0.001
 round_decimals = 1000000
-values_to_store = ['name', 'country', 'age', 'gender', 'playcount']
+values_to_store = ['name', 'country', 'playcount']
+
+stored_users = []
+with io.open('users.csv', 'rb') as f:
+    reader = csv.reader(f, delimiter='\t', lineterminator='\n')
+    for row in reader:
+        stored_users.append(row[0])
+
+print(len(stored_users))
 
 
-def store_json(path, new_json, inform=False):
-    with open(path, 'w') as file:
-        json.dump(new_json, file)
-        if inform:
-            print 'file ' + path + ' saved.'
+def store_new_user(username, user_data):
+    stored_users.append(username)
+
+    with io.open('users.csv', 'ab') as f:
+        writer = csv.writer(f, delimiter='\t', lineterminator='\n')
+        writer.writerow(user_data)
 
 
 def do_as_request(url_rest):
@@ -33,30 +42,42 @@ def get_friends(username):
     return do_as_request('user.getfriends&user=' + username)
 
 
+total = 0
+new = 0
+
+
 def store_friends(usernames, lvl):
+    global total
+    global new
+
     new_users = []
     for ui, username in enumerate(usernames):
-        print('progress: (lvl: ' + str(lvl) + ', user: ' + username + ') - ' +
-              str(float(ui) / float(len(usernames)) * 100) + '%')
+        #print('progress: (lvl: ' + str(lvl) + ', user: ' + username + ') - ' +
+        #str(float(ui) / float(len(usernames)) * 100) + '%')
 
         friends_q = get_friends(username)
         try:
             if 'friends' in friends_q:
                 friends = friends_q['friends']['user']
 
+                stored = 0
                 for friend in friends:
                     name = friend['name']
 
-                    friend_d = {}
-                    for value in values_to_store:
-                        friend_d[value] = friend[value]
-                    friend_d['lvl'] = lvl
-
-                    if name not in all_users:
+                    if name not in stored_users:
+                        store_new_user(name, [
+                            friend['name'], lvl, friend['country'],
+                            friend['playcount']
+                        ])
+                        stored += 1
                         new_users.append(name)
-                        all_users[name] = friend_d
-                    else:
-                        print('user ' + username + ' in stored values already')
+
+                total += len(friends)
+                new += stored
+                print('user: ' + username + ' , stored ' + str(stored) + '/' +
+                      str(len(friends)) + ', total: ' +
+                      str(len(stored_users)) + ' [success: ' + str(
+                          (float(new) / float(total)) * 100) + '%]')
 
         except Exception as e:
             print('!!')
@@ -67,28 +88,16 @@ def store_friends(usernames, lvl):
     return new_users
 
 
-all_users = {}
+# first iteratiron
+friends1 = store_friends(['cengizhaneren'], 1)
 
-#first iteratiron
-friends1 = store_friends(['Endar61'], 1)
-
-#second iteration
+# second iteration
 friends2 = store_friends(friends1, 2)
 
-#third iteration
+# third iteration
 friends3 = store_friends(friends2, 3)
 
-with io.open('users.csv', 'wb') as f:
-    writer = csv.writer(f, delimiter='\t', lineterminator='\n')
-
-    writer.writerow(values_to_store)
-
-    for user in all_users:
-        user_row = []
-        for value in values_to_store:
-            user_row.append(all_users[user][value])
-
-        user_row.append(all_users[user]['lvl'])
-        writer.writerow(user_row)
-
-store_json('users.json', all_users, True)
+# fourth iteration
+friends4 = store_friends(friends3, 4)
+#friends5 = store_friends(friends4, 5)
+#friends6 = store_friends(friends5, 6)
