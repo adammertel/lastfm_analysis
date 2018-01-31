@@ -14,6 +14,9 @@ values_to_store = ['name', 'country', 'playcount']
 
 stored_users = []
 processed_users = []
+processing_lvl = 0
+will_process = []
+start_user = 'Endar61'
 
 with io.open('users.csv', 'rb') as f:
     reader = csv.reader(f, delimiter='\t', lineterminator='\n')
@@ -27,14 +30,6 @@ with io.open('processed.csv', 'rb') as f:
 
 print(len(stored_users))
 print(len(processed_users))
-
-
-def store_new_user(username, user_data):
-    stored_users.append(username)
-
-    with io.open('users.csv', 'ab') as f:
-        writer = csv.writer(f, delimiter='\t', lineterminator='\n')
-        writer.writerow(user_data)
 
 
 def do_as_request(url_rest):
@@ -54,18 +49,36 @@ total = 0
 new = 0
 
 
-def store_friends(usernames, lvl):
+def store_friends():
     global total
     global new
 
-    new_users = []
-    for ui, username in enumerate(usernames):
-        #print('progress: (lvl: ' + str(lvl) + ', user: ' + username + ') - ' +
-        #str(float(ui) / float(len(usernames)) * 100) + '%')
+    this_lvl_users = []
+    lvl = 0
+
+    with io.open('next_level.csv', 'rb') as f:
+        reader = csv.reader(f, delimiter='\t', lineterminator='\n')
+        for ri, row in enumerate(reader):
+            if ri == 0:
+                lvl = int(row[0])
+            else:
+                this_lvl_users.append(row[0])
+
+    if len(this_lvl_users) == 0:
+        this_lvl_users = [start_user]
+
+    for_the_next_lvl = []
+
+    will_be_stored = []
+
+    for ui, username in enumerate(this_lvl_users):
+        print('progress: (lvl: ' + str(lvl) + ', user: ' + username + ') - ' +
+              str(float(ui) / float(len(this_lvl_users)) * 100) + '%')
 
         friends_q = get_friends(username)
         try:
             if 'friends' in friends_q:
+                processed_users.append(username)
                 friends = friends_q['friends']['user']
 
                 stored = 0
@@ -73,14 +86,15 @@ def store_friends(usernames, lvl):
                     name = friend['name']
 
                     if name not in stored_users:
-                        store_new_user(name, [
+                        stored_users.append(name)
+                        will_be_stored.append([
                             friend['name'], lvl, friend['country'],
                             friend['playcount']
                         ])
                         stored += 1
 
                     if name not in processed_users:
-                        new_users.append(name)
+                        for_the_next_lvl.append(name)
 
                 total += len(friends)
                 new += stored
@@ -96,25 +110,28 @@ def store_friends(usernames, lvl):
             print(e)
             print('!!')
 
-        if username not in processed_users:
-            processed_users.append(username)
-            with io.open('processed.csv', 'ab') as f:
-                writer = csv.writer(f, delimiter='\t', lineterminator='\n')
-                writer.writerow([username])
+    # saving processed users
+    with io.open('processed.csv', 'wb') as f:
+        writer = csv.writer(f, delimiter='\t', lineterminator='\n')
+        for processed_user in processed_users:
+            writer.writerow([processed_user])
 
-    return new_users
+    # storing found friends
+    with io.open('users.csv', 'ab') as f:
+        writer = csv.writer(f, delimiter='\t', lineterminator='\n')
+        for friend in will_be_stored:
+            writer.writerow(friend)
+
+    # storing users to be processed in the next iteration
+    lvl += 1
+    with io.open('next_level.csv', 'wb') as f:
+        writer = csv.writer(f, delimiter='\t', lineterminator='\n')
+        writer.writerow(str(lvl))
+        for user in for_the_next_lvl:
+            writer.writerow([user])
+
+    if lvl < 8:
+        store_friends()
 
 
-# first iteratiron
-friends1 = store_friends(['mIZZYchal'], 1)
-
-# second iteration
-friends2 = store_friends(friends1, 2)
-
-# third iteration
-friends3 = store_friends(friends2, 3)
-
-# fourth iteration
-friends4 = store_friends(friends3, 4)
-#friends5 = store_friends(friends4, 5)
-#friends6 = store_friends(friends5, 6)
+store_friends()
