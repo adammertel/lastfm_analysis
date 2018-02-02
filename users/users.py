@@ -18,6 +18,26 @@ processing_lvl = 0
 will_process = []
 start_user = 'Endar61'
 
+once_loaded = json.load(open('once_loaded.json'))
+
+
+def append_object_to_stored_json(path, key, value):
+    loaded_json = json.load(open(path))
+    loaded_json[key] = value
+    store_json(path, loaded_json)
+
+
+def extend_stored_json(path, extension):
+    loaded_json = json.load(open(path))
+    extended_json = loaded_json.update(extension)
+    store_json(path, extended_json)
+
+
+def store_json(path, new_json):
+    with open(path, 'w') as file:
+        json.dump(new_json, file)
+
+
 with io.open('users.csv', 'rb') as f:
     reader = csv.reader(f, delimiter='\t', lineterminator='\n')
     for row in reader:
@@ -27,6 +47,11 @@ with io.open('processed.csv', 'rb') as f:
     reader = csv.reader(f, delimiter='\t', lineterminator='\n')
     for row in reader:
         processed_users.append(row[0])
+
+
+def clean_json(path):
+    store_json(path, {})
+
 
 print(len(stored_users))
 print(len(processed_users))
@@ -75,34 +100,49 @@ def store_friends():
         print('progress: (lvl: ' + str(lvl) + ', user: ' + username + ') - ' +
               str(float(ui) / float(len(this_lvl_users)) * 100) + '%')
 
-        friends_q = get_friends(username)
         try:
-            if 'friends' in friends_q:
-                processed_users.append(username)
-                friends = friends_q['friends']['user']
+            friends = []
+            if username in once_loaded:
+                print(username, '  already stored before')
+                friends = once_loaded[username]
+            else:
+                friends_q = get_friends(username)
+                if 'friends' in friends_q:
+                    full_friends = friends_q['friends']['user']
+                    for f in full_friends:
+                        friends.append({
+                            'name': f['name'],
+                            'country': f['country'],
+                            'playcount': f['playcount']
+                        })
+                    append_object_to_stored_json('once_loaded.json', username,
+                                                 friends)
+                    once_loaded[username] = friends
 
-                stored = 0
-                for friend in friends:
-                    name = friend['name']
+            processed_users.append(username)
 
-                    if name not in stored_users:
-                        stored_users.append(name)
-                        will_be_stored.append([
-                            friend['name'], lvl, friend['country'],
-                            friend['playcount']
-                        ])
-                        stored += 1
+            stored = 0
+            for friend in friends:
+                name = friend['name']
 
-                    if name not in processed_users:
-                        for_the_next_lvl.append(name)
+                if name not in stored_users:
+                    stored_users.append(name)
+                    will_be_stored.append([
+                        friend['name'], lvl, friend['country'],
+                        friend['playcount']
+                    ])
+                    stored += 1
 
-                total += len(friends)
-                new += stored
+                if name not in processed_users:
+                    for_the_next_lvl.append(name)
 
-                print('user: ' + username + ' , lvl: ' + str(lvl) + ' stored '
-                      + str(stored) + '/' + str(len(friends)) + ', total: ' +
-                      str(len(stored_users)) + ' [success rate: ' + str(
-                          (float(new) / float(total)) * 100) + '%]')
+            total += len(friends)
+            new += stored
+
+            #print('user: ' + username + ' , lvl: ' + str(lvl) + ' stored '
+            #      + str(stored) + '/' + str(len(friends)) + ', total: ' +
+            #      str(len(stored_users)) + ' [success rate: ' + str(
+            #          (float(new) / float(total)) * 100) + '%]')
 
         except Exception as e:
             print('!!')
@@ -132,6 +172,8 @@ def store_friends():
 
     if lvl < 8:
         store_friends()
+
+    clean_json('once_stored.json')
 
 
 store_friends()
