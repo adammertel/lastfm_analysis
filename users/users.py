@@ -41,7 +41,8 @@ def store_json(path, new_json):
 with io.open('users.csv', 'rb') as f:
     reader = csv.reader(f, delimiter='\t', lineterminator='\n')
     for row in reader:
-        stored_users.append(row[0])
+        if row[0]:
+            stored_users.append(row[0])
 
 with io.open('processed.csv', 'rb') as f:
     reader = csv.reader(f, delimiter='\t', lineterminator='\n')
@@ -97,58 +98,54 @@ def store_friends():
     will_be_stored = []
 
     for ui, username in enumerate(this_lvl_users):
-        print('progress: (lvl: ' + str(lvl) + ', user: ' + username + ') - ' +
-              str(float(ui) / float(len(this_lvl_users)) * 100) + '%')
+        if username not in processed_users:
+            stored_message = ' - already stored ' if username in once_loaded else ''
+            print('progress: (lvl: ' + str(lvl) + ', user: ' + username +
+                  ') - ' + str(float(ui) / float(len(this_lvl_users)) * 100) +
+                  '%') + stored_message
 
-        try:
-            friends = []
-            if username in once_loaded:
-                print(username, '  already stored before')
-                friends = once_loaded[username]
-            else:
-                friends_q = get_friends(username)
-                if 'friends' in friends_q:
-                    full_friends = friends_q['friends']['user']
-                    for f in full_friends:
-                        friends.append({
-                            'name': f['name'],
-                            'country': f['country'],
-                            'playcount': f['playcount']
-                        })
-                    append_object_to_stored_json('once_loaded.json', username,
-                                                 friends)
-                    once_loaded[username] = friends
+            try:
+                friends = []
+                if username in once_loaded:
+                    friends = once_loaded[username]
 
-            processed_users.append(username)
+                else:
+                    friends_q = get_friends(username)
+                    if 'friends' in friends_q:
+                        full_friends = friends_q['friends']['user']
+                        for f in full_friends:
+                            friends.append(
+                                [f['name'], f['country'], f['playcount']])
+                        append_object_to_stored_json('once_loaded.json',
+                                                     username, friends)
+                        once_loaded[username] = friends
+                processed_users.append(username)
 
-            stored = 0
-            for friend in friends:
-                name = friend['name']
+                stored = 0
+                for friend in friends:
+                    name = friend[0]
 
-                if name not in stored_users:
-                    stored_users.append(name)
-                    will_be_stored.append([
-                        friend['name'], lvl, friend['country'],
-                        friend['playcount']
-                    ])
-                    stored += 1
+                    if name not in stored_users:
+                        stored_users.append(name)
+                        will_be_stored.append([lvl] + friend)
+                        stored += 1
 
-                if name not in processed_users:
-                    for_the_next_lvl.append(name)
+                    if name not in processed_users:
+                        for_the_next_lvl.append(name)
 
-            total += len(friends)
-            new += stored
+                total += len(friends)
+                new += stored
 
-            #print('user: ' + username + ' , lvl: ' + str(lvl) + ' stored '
-            #      + str(stored) + '/' + str(len(friends)) + ', total: ' +
-            #      str(len(stored_users)) + ' [success rate: ' + str(
-            #          (float(new) / float(total)) * 100) + '%]')
+                #print('user: ' + username + ' , lvl: ' + str(lvl) + ' stored '
+                #      + str(stored) + '/' + str(len(friends)) + ', total: ' +
+                #      str(len(stored_users)) + ' [success rate: ' + str(
+                #          (float(new) / float(total)) * 100) + '%]')
 
-        except Exception as e:
-            print('!!')
-            print('problem reading user, ' + username + ' !!')
-            print(e)
-            print('!!')
+            except Exception as e:
+                print('!!')
+                print('problem reading user, ' + username + ' !!')
+                print(e)
+                print('!!')
 
     # saving processed users
     with io.open('processed.csv', 'wb') as f:
@@ -172,8 +169,6 @@ def store_friends():
 
     if lvl < 8:
         store_friends()
-
-    clean_json('once_stored.json')
 
 
 store_friends()
