@@ -33,7 +33,7 @@ colors = [
 d3.tsv('./../tags/outputs/pca.csv', function(pcaData) {
   console.log(pcaData);
 
-  d3.json('./../data/countries.geojson', function(error, data) {
+  d3.json('./../countries.geojson', function(error, data) {
     var features = data.features;
 
     // Draw each province as a path
@@ -48,7 +48,7 @@ d3.tsv('./../tags/outputs/pca.csv', function(pcaData) {
           return pcaRow[''] === d.properties.admin;
         });
         if (row) {
-          return colors[parseInt(row.clusters_kmeans, 10)];
+          return colors[parseInt(row.clusters_ms, 10)];
         } else {
           return 'lightgrey';
         }

@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 import json
+import csv
+import io
 
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
-limit_artists = 200
-tag_threshold = 0.001
+limit_artists = 10
 round_decimals = 1000000
 
 
@@ -88,8 +89,8 @@ def parse_and_store():
     for key in tags_keys:
         tags_keys[key]['val'] = _round(
             float(tags_keys[key]['val']) / float(len(countries_tags.keys())))
-        if tags_keys[key]['val'] > tag_threshold:
-            normalised_relevant_tags[key] = tags_keys[key]
+
+        normalised_relevant_tags[key] = tags_keys[key]
 
     tags_keys = normalised_relevant_tags
 
@@ -115,22 +116,23 @@ def parse_and_store():
 
 
 # cleaning old data
-#clean_json('artists_tags.json')
+# clean_json('artists_tags.json')
 clean_json('countries_tags.json')
 clean_json('countries_not_found.json')
 print('lists cleaned')
 
 countries_tags = {}
 artists_tags = json.load(open('artists_tags.json'))
-countries = json.load(open('./../data/countries.geojson'))
+countries = json.load(open('./../countries.geojson'))
 
-# adding country names to the list of restricted tags
-restricted_tags = json.load(open('restricted_tags.json'))
-country_names = [
-    c['properties']['admin'].lower() for c in countries['features']
-]
-restricted_tags += country_names
+# creating white list
+white_list = []
+with open('white_list.txt', 'rb') as file:
+    reader = csv.reader(file, delimiter='\t', lineterminator='\n')
+    for row in reader:
+        white_list.append(clean_tag_name(row[0]))
 
+#
 countries_not_found = []
 countries_no = len(countries['features'])
 
@@ -152,6 +154,13 @@ for country_obj in countries['features']:
     try:
         artists_q = do_as_request('geo.gettopartists&country=' + country +
                                   '&limit=' + str(limit_artists))
+
+        # in case, the 'admin' property is not good, use the NAME
+        if 'topartists' not in artists_q:
+            artists_q = do_as_request(
+                'geo.gettopartists&country=' + country_obj['properties']
+                ['NAME'] + '&limit=' + str(limit_artists))
+
         artists = artists_q['topartists']['artist']
 
         for ai, artist in enumerate(artists):
@@ -174,7 +183,7 @@ for country_obj in countries['features']:
 
                     allowed_tags = [
                         d for d in tags_list
-                        if clean_tag_name(d['name']) not in restricted_tags
+                        if clean_tag_name(d['name']) in white_list
                     ]
                     sum_count = sum(i['count'] for i in allowed_tags)
 
@@ -203,8 +212,7 @@ for country_obj in countries['features']:
         # remove small
         relevant_tags = {}
         for tag in country_tags:
-            if country_tags[tag] > tag_threshold:
-                relevant_tags[tag] = country_tags[tag]
+            relevant_tags[tag] = country_tags[tag]
 
         # normalise
         sum_relevant_tags = sum(relevant_tags[i] for i in relevant_tags)
