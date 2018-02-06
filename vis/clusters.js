@@ -48,7 +48,7 @@ d3.tsv('./../tags/outputs/pca.csv', function(pcaData) {
           return pcaRow[''] === d.properties.admin;
         });
         if (row) {
-          return colors[parseInt(row.clusters_ms, 10)];
+          return colors[parseInt(row.PC1_sum, 10)];
         } else {
           return 'lightgrey';
         }

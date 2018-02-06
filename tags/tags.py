@@ -7,7 +7,7 @@ import csv
 import io
 
 lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
-limit_artists = 10
+limit_artists = 1000
 round_decimals = 1000000
 
 

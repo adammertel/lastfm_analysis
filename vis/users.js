@@ -48,7 +48,7 @@ var modeData = {
       '#006837',
       '#004529'
     ],
-    scaleExponent: 1.3
+    scaleExponent: 1.5
   }
 };
 var colors = modeData[mode].colors;
