@@ -16,7 +16,6 @@ Hip-Hop
 hard rock
 black metal
 dance
-80s
 Progressive rock
 death metal
 heavy metal
@@ -29,7 +28,6 @@ punk rock
 thrash metal
 acoustic
 psychedelic
-90s
 metalcore
 post-rock
 Progressive metal
@@ -40,11 +38,9 @@ trance
 House
 reggae
 trip-hop
-70s
 post-punk
 electro
 techno
-60s
 indie pop
 rnb
 country
@@ -54,10 +50,8 @@ emo
 post-hardcore
 doom metal
 oldies
-00s
 Psychedelic Rock
 Gothic Metal
-Gothic
 Grunge
 synthpop
 britpop
@@ -68,7 +62,6 @@ grindcore
 new age
 ska
 Avant-Garde
-pop rock
 blues rock
 dubstep
 folk metal
@@ -81,13 +74,11 @@ latin
 hardcore punk
 Stoner Rock
 folk rock
-christian
 Sludge
 contemporary classical
 electropop
 Smooth Jazz
 romantic
-classic
 Fusion
 Technical Death Metal
 art rock
@@ -102,11 +93,8 @@ neoclassical
 rockabilly
 glam rock
 rock n roll
-synth pop
-Rock and Roll
 atmospheric black metal
 krautrock
-post rock
 nu jazz
 rhythm and blues
 World Music
@@ -117,16 +105,13 @@ medieval
 industrial rock
 trip hop
 opera
-dancehall
 indie folk
 r&b
 christian rock
 pagan metal
 Experimental Rock
-50s
 dnb
 progressive death metal
-Crust
 groove metal
 melodic black metal
 Symphonic Black Metal
@@ -141,16 +126,12 @@ modern classical
 bluegrass
 stoner metal
 minimalism
-Pop-Rock
 orchestral
 chanson
-nu-jazz
 sludge metal
 Flamenco
 contemporary jazz
 Soundtracks
-folk-rock
-Big Band
 symphonic
 renaissance
 early music
@@ -161,32 +142,21 @@ alternative pop
 Funk Rock
 ambient black metal
 Jazz Rock
-neo-classical
-DJENT
 folk punk
 minimalist
 country rock
-Game Music
-organ
-Electro Pop
 modern rock
-musicologist
 ballads
 trash metal
 art pop
-90's
 prog rock
 pagan black metal
 psychedelic folk
 classical music
-symphony
-nujazz
 blues-rock
-40s
 crust punk
 progressive black metal
 classical guitar
-orchestra
 a cappella
 electroacoustic
 musicals

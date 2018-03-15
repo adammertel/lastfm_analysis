@@ -10,6 +10,9 @@ lfm_api = '778ac0fc81473b52b8ca6c8c7f476e11'
 limit_artists = 1000
 round_decimals = 1000000
 
+country_pop_limit = 200000
+country_users_limit = 100
+
 
 def do_as_request(url_rest):
     return do_request('http://ws.audioscrobbler.com/2.0/?method=' + url_rest +
@@ -44,7 +47,9 @@ def clean_json(path):
 
 
 def clean_tag_name(tag):
-    return tag.lower().replace('-', ' ').replace('\'', '')
+    if tag == 'rhythm and blues':
+        tag = 'rnb'
+    return tag.lower().replace('-', ' ').replace('\'', '').replace('&', 'n')
 
 
 def _round(number, places=round_decimals):
@@ -116,7 +121,7 @@ def parse_and_store():
 
 
 # cleaning old data
-# clean_json('artists_tags.json')
+#clean_json('artists_tags.json')
 clean_json('countries_tags.json')
 clean_json('countries_not_found.json')
 print('lists cleaned')
@@ -124,6 +129,7 @@ print('lists cleaned')
 countries_tags = {}
 artists_tags = json.load(open('artists_tags.json'))
 countries = json.load(open('./../countries.geojson'))
+countries_users = json.load(open('./../users/users_aggregated.json'))
 
 # creating white list
 white_list = []
@@ -134,11 +140,26 @@ with open('white_list.txt', 'rb') as file:
 
 #
 countries_not_found = []
-countries_no = len(countries['features'])
 
+countries_reduced = []
+for c in countries['features']:
+    props = c['properties']
+    country_users = False
+
+    if props['admin'] in countries_users:
+        country_users = countries_users[props['admin']]
+    elif props['NAME'] in countries_users:
+        country_users = countries_users[props['NAME']]
+
+    if country_users and c['properties']['POP_EST'] > country_pop_limit and country_users['sum']['users'] > country_users_limit:
+        countries_reduced.append(c)
+
+print [c['properties']['admin'] for c in countries_reduced]
+
+countries_no = len(countries_reduced)
 processed_no = 0
 
-for country_obj in countries['features']:
+for country_obj in countries_reduced:
     processed_no = processed_no + 1
     country = country_obj['properties']['admin']
 
