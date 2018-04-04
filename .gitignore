@@ -1,4 +1,4 @@
 .vscode
 bower_components
-*.csv
 *.pyc
+data
