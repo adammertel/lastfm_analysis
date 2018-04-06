@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 from scipy.spatial.distance import pdist
 from sklearn.cluster import AgglomerativeClustering
 
@@ -13,8 +13,16 @@ clusters = AgglomerativeClustering(n_clusters=6).fit(data)
 
 dists = pdist(data)
 links = linkage(pdist(data), 'ward')
-#print(dists)
+
 #print(len(dists))
+out_data = data.loc[:, []]
+print(out_data)
+out_data.insert(0, '0.30', fcluster(links, 0.30, 'distance'))
+out_data.insert(0, '0.25', fcluster(links, 0.25, 'distance'))
+out_data.insert(0, '0.20', fcluster(links, 0.20, 'distance'))
+out_data.insert(0, '0.15', fcluster(links, 0.15, 'distance'))
+out_data.insert(0, '0.10', fcluster(links, 0.10, 'distance'))
+out_data.insert(0, '0.05', fcluster(links, 0.05, 'distance'))
 
 plt.figure(figsize=(25, 10))
 plt.subplots_adjust(bottom=0.3)
@@ -27,4 +35,6 @@ dendrogram(
     leaf_rotation=90,
     leaf_font_size=12,
     labels=data.index)
-plt.show()
+#plt.show()
+
+out_data.to_csv("./../output/agglomerations.csv", sep="\t")
