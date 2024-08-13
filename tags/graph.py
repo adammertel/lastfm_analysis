@@ -33,7 +33,6 @@ for col in corr_sub.columns:
     for row in corr_sub.index:
         if row != col and col + '-' + row not in added:
             w = (corr_sub[col][row] + 1) / 2
-            print w
             added.append(col + '-' + row)
             G.add_edge(col, row, w=float(w))
 
@@ -60,7 +59,7 @@ nx.draw_networkx_labels(
     font_size=11,
     font_color='r',
     font_family='sans-serif',
-    font_weigh='bold')
+    )
 
 plt.axis('off')
 #plt.savefig("weighted_graph.png")  # save as png

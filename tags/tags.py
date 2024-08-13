@@ -38,8 +38,6 @@ def extend_stored_json(path, extension):
 def store_json(path, new_json, inform=False):
     with open(path, 'w') as file:
         json.dump(new_json, file)
-        if inform:
-            print 'file ' + path + ' saved.'
 
 
 def clean_json(path):
@@ -128,8 +126,8 @@ print('lists cleaned')
 
 countries_tags = {}
 artists_tags = json.load(open('artists_tags.json'))
-countries = json.load(open('./../countries.geojson'))
-countries_users = json.load(open('./../users/users_aggregated.json'))
+countries = json.load(open('./../data/countries.geojson'))
+countries_users = json.load(open('./../users/users.json'))
 
 # creating white list
 white_list = []
@@ -154,7 +152,6 @@ for c in countries['features']:
     if country_users and c['properties']['POP_EST'] > country_pop_limit and country_users['sum']['users'] > country_users_limit:
         countries_reduced.append(c)
 
-print [c['properties']['admin'] for c in countries_reduced]
 
 countries_no = len(countries_reduced)
 processed_no = 0
@@ -162,10 +159,6 @@ processed_no = 0
 for country_obj in countries_reduced:
     processed_no = processed_no + 1
     country = country_obj['properties']['admin']
-
-    print ''
-    print 'processing country: ' + country + ', ' + str(
-        processed_no) + ' / ' + str(countries_no)
 
     country_tags = {}
     found_artists = limit_artists
